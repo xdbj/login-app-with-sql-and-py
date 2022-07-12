@@ -12,7 +12,7 @@ reguserpass_input = tkinter.StringVar()
 padd=20
 main_window['padx']=padd
 
-
+import sqlite3
 
 
 
@@ -68,32 +68,17 @@ info_pass=tkinter.Label(main_window, text='create a Password')
 info_pass.grid(row=7, column=0, pady=20)
 regpassinput=tkinter.Entry(main_window, textvariable=reguserpass_input, show='*')
 regpassinput.grid(row=7, column=1)
-regpass = reguserinput.get()
-reguser = regpassinput.get()
-passinp = passinput.get()
-regpassenc = regpass.encode('utf-8')
-passinpenc = passinp.encode('utf-8')
-import hashlib
-
-
-# instantiate sha3_256 object
-d = hashlib.sha3_256(regpassenc)
-f = hashlib.sha3_256(passinpenc)
+db=sqlite3.connect('main.db')
+cursor=db.cursor()
+#cursor.execute("""DROP TABLE "users" """)
 
 
 
-# generate human readably hash of "hello" string
-hash = d.hexdigest()
-hash2 = f.hexdigest()
-print(hash)
-hash.strip(' " " ')
-#sha256 instead of bcrypt
-import sqlite3
 def login():
-    db=sqlite3.connect('e.db')
-# db.execute("INSERT INTO login(username, password) VALUES('admin', 'admin')")
+    db=sqlite3.connect('main.db')
     cursor=db.cursor()
-    cursor.execute("SELECT * FROM users where username=? AND password=?",(userinput.get(), hash2))
+    
+    cursor.execute("SELECT * FROM users where username=? AND password=?",(userinput.get(), passinput.get()))
     row=cursor.fetchone()
     if row:
         messagebox.showinfo('info', 'login success')
@@ -104,14 +89,38 @@ def login():
 
 
 def register():
-    sqlite_insert_query = f"INSERT INTO users (username, password) VALUES ('{reguserinput.get()}', '{hash}')"
-     
+    
 
-    db = sqlite3.connect('e.db')
+    db = sqlite3.connect('main.db')
 
     cur = db.cursor()
-    count = cur.execute(sqlite_insert_query)
-    cur.connection.commit()
+    sqlite_insert_query = f"INSERT INTO users (username, password) VALUES ('{reguserinput.get()}', '{regpassinput.get()}')"
+    lene = len(regpassinput.get())
+    if lene <= 8:
+
+        
+        cur.connection.commit()
+        messagebox.showinfo('warning', 'password must be longer than 8 characters')
+
+
+
+    cur.execute(f"SELECT * FROM users WHERE username='{reguserinput.get()}'")
+    exists = cur.fetchone()
+    if exists:
+        messagebox.showinfo('info', 'username already exists')
+
+
+
+    
+    
+    
+    else:
+        count = cur.execute(sqlite_insert_query)
+        row=cur.fetchall()
+        cur.connection.commit()
+        import time
+        messagebox.showinfo('info', 'register success')
+
 login_btn=tkinter.Button(main_window, text='Login', command=login)
 login_btn.grid(row=4, column=1)
 login_btn=tkinter.Button(main_window, text='Register', command=register)
